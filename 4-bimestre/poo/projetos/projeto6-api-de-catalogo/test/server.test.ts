@@ -1,42 +1,26 @@
-import request from "supertest";
-import server from "../src/server";
+import express from "express"
+import helmet from "helmet"
+import dotenv from "dotenv"
+import path from "path"
+import router from "../src/routes"
 
-describe("Testes do Projeto 6 - TechMarket API", () => {
-  afterAll(() => {
-    server.listen.close();
-  });
+dotenv.config()
 
-  it("Deve retornar pong em /ping", async () => {
-    const res = await request(server).get("/ping");
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ pong: true });
-  });
+const appExpress = express()
+const PORT = process.env.PORT || 3000
 
-  it("Deve retornar nome e idade em /", async () => {
-    const res = await request(server).get("/");
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("nome");
-    expect(res.body).toHaveProperty("idade");
-  });
+appExpress.use(helmet())
+appExpress.use(express.json())
+appExpress.use(express.urlencoded({ extended: true }))
+appExpress.use(express.static(path.join(__dirname, "../public")))
+appExpress.use("/", router)
 
-  it("Deve retornar lista de produtos", async () => {
-    const res = await request(server).get("/produtos");
-    expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body[0]).toHaveProperty("nome");
-  });
-
-  it("Deve retornar um produto específico", async () => {
-    const res = await request(server).get("/produtos/1");
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("id", 1);
-  });
-
-  it("Deve permitir cadastrar um novo produto", async () => {
-    const novo = { id: 99, nome: "Webcam", preco: 300 };
-    const res = await request(server).post("/produtos").send(novo);
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual(novo);
-  });
+const server = appExpress.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`)
 });
 
+server.close(() => {
+  console.log("Servidor encerrado.")
+})
+
+export default server
